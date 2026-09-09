@@ -38,6 +38,7 @@ export class LLMManager {
     const providerPick = await vscode.window.showQuickPick(
       [
         { label: "OpenAI", value: "openai" },
+        { label: "Atlas Cloud", value: "atlascloud" },
         { label: "Gemini", value: "gemini" },
         { label: "Groq", value: "groq" },
         { label: "Ollama (local)", value: "ollama" },

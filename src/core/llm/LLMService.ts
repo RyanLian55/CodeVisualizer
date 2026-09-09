@@ -1,7 +1,7 @@
 import * as crypto from "crypto";
 import { logInfo, logWarn, logError } from "./LLMLogger";
 
-export type Provider = "openai" | "gemini" | "groq" | "ollama";
+export type Provider = "openai" | "atlascloud" | "gemini" | "groq" | "ollama";
 
 export interface TranslateParams {
   mermaidSource: string;
@@ -19,6 +19,8 @@ export class LLMService {
     switch (provider) {
       case "openai":
         return ["gpt-4o-mini", "gpt-4o", "o3-mini"];
+      case "atlascloud":
+        return ["openai/gpt-4.1-mini"];
       case "gemini":
         return ["gemini-1.5-flash", "gemini-1.5-pro"];
       case "groq":
@@ -266,6 +268,17 @@ async function callProvider(
           expectedCount,
           labels
         );
+      case "atlascloud":
+        return await callOpenAI(
+          model,
+          apiKey,
+          systemPrompt,
+          userPrompt,
+          expectedCount,
+          labels,
+          "https://api.atlascloud.ai/v1/chat/completions",
+          "Atlas Cloud"
+        );
       case "gemini":
         return await callGemini(
           model,
@@ -439,6 +452,8 @@ async function callOpenAI(
   userPrompt: string,
   expectedCount: number,
   referenceLabels: string[],
+  endpoint = "https://api.openai.com/v1/chat/completions",
+  providerName = "OpenAI",
 ): Promise<string[] | null> {
   try {
     const bodyPayload = {
@@ -450,7 +465,7 @@ async function callOpenAI(
         { role: "user", content: userPrompt },
       ],
     };
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -461,7 +476,7 @@ async function callOpenAI(
     if (!res.ok) {
       const text = await safeReadBody(res);
       logWarn(
-        `OpenAI responded with ${res.status} ${res.statusText}. Body snippet: ${text.substring(
+        `${providerName} responded with ${res.status} ${res.statusText}. Body snippet: ${text.substring(
           0,
           500
         )}`
@@ -471,7 +486,7 @@ async function callOpenAI(
     const data: unknown = await res.json();
     if (!isOpenAIChatCompletionResponse(data)) {
       logWarn(
-        `OpenAI response shape unexpected: ${JSON.stringify(data).substring(
+        `${providerName} response shape unexpected: ${JSON.stringify(data).substring(
           0,
           500
         )}`
@@ -483,13 +498,13 @@ async function callOpenAI(
         ? data.choices[0].message.content
         : undefined;
     if (!content) {
-      logWarn("OpenAI response did not contain message content");
+      logWarn(`${providerName} response did not contain message content`);
       return null;
     }
     const parsed = parseLabelsJsonText(content, expectedCount, referenceLabels);
     if (!parsed) {
       logWarn(
-        `OpenAI output could not be parsed as JSON array. Content: ${content.substring(
+        `${providerName} output could not be parsed as JSON array. Content: ${content.substring(
           0,
           500
         )}`
@@ -498,7 +513,7 @@ async function callOpenAI(
     return parsed;
   } catch (err) {
     logError(
-      `OpenAI fetch error: ${err instanceof Error ? err.message : String(err)}`,
+      `${providerName} fetch error: ${err instanceof Error ? err.message : String(err)}`,
     );
     return null;
   }
