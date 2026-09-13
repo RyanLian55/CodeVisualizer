@@ -258,6 +258,7 @@
           "type": "string",
           "enum": [
             "openai",
+            "atlascloud",
             "gemini",
             "groq",
             "ollama",
