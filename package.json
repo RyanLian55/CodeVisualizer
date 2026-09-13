@@ -1,7 +1,7 @@
 {
   "name": "codevisualizer",
   "displayName": "CodeVisualizer",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "publisher": "ducphamngoc",
   "description": "Real-time interactive flowcharts for your code",
   "repository": {
